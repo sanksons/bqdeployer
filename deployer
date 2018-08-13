@@ -73,6 +73,7 @@ function selectProject() {
   echo "4. opticalshrink"
   echo "5. atom"
   echo "6. fluorescence"
+  echo "7. magnumopus"
   echo ${txtrst}
 while :
 do
@@ -132,7 +133,16 @@ do
     PROJ_PATH="$GOPATH/src/github.com/BoutiqaatREPO/fluorescence"
     BUILD_COMMAND="getsetgo deploy"
     break
-    ;;            
+    ;;
+  7)
+    echo "Deploying MagnumOpus!"
+    export GOPATH=/usr/local/boutiqaat/magnumopus
+    export GOBIN=/usr/local/boutiqaat/magnumopus/bin
+    PROJ_NAME="magnumopus"
+    PROJ_PATH="$GOPATH/src/github.com/BoutiqaatREPO/magnumopus"
+    BUILD_COMMAND="getsetgo deploy"
+    break
+    ;;                
 	*)
 		echo "Wrong input supplied"
 		;;
