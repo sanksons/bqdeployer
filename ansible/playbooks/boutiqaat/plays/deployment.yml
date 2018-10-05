@@ -67,6 +67,8 @@
      command: "{{ item }}"
      with_items:
        - /usr/local/bin/supervisorctl restart atom
+       - /usr/local/bin/supervisorctl restart stock
+       - /usr/local/bin/supervisorctl restart magentoQ
      become: yes
      when: projname == "atom"
    - name: Fluorescence specific settings
