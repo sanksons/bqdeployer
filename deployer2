@@ -1,0 +1,248 @@
+#!/bin/bash
+# Bash Menu Script Example
+
+# Text Formating
+txtgrn=$(tput setaf 2) # Green
+txtwht=$(tput setaf 7) # White
+txtblu=$(tput setaf 4) # Blue
+txtrst=$(tput sgr0) # Text reset.
+txtbold=$(tput bold) # Text Bold
+txtred=$(tput setaf 1) # red
+txtyellow=$(tput setaf 3) # yellow
+
+TXT_START="$txtblu[START]$txtrst";
+TXT_FINISH="${txtyellow}FINISHED${txtrst}";
+TXT_ERROR="${txtred}ERROR OCCURRED:${txtrst}";
+
+# project specific settings
+PROJ_NAME=''
+PROJ_PATH=''
+
+DEPLOYMENT_FULL_PATH=''
+BUILD_COMMAND=''
+HOST_NAME=''
+RC_NAME=''
+
+
+#Handle error status
+function error_exit
+{
+ echo "$TXT_ERROR$1$txtrst" | 1>&2
+ exit 1
+}
+
+function selectHost() {
+  echo ""
+  echo ${txtyellow}
+  echo "PLease select Host .."
+  echo "1. Staging"
+  echo "2. Testing"
+  echo "---------------"
+  echo "3. ALL"
+  echo ${txtrst}
+  while :
+  do
+    read INPUT_STRING
+    case $INPUT_STRING in
+	  1)
+      HOST_NAME="staging"
+      break
+		  ;;
+    2)
+      HOST_NAME="testing"
+      break
+	  	;;
+    3)
+      HOST_NAME="all"
+      break
+	  	;;  
+    *)
+		  echo "Wrong input supplied"
+		  ;;
+     esac
+  done  
+}
+
+function selectProject() {
+  
+  echo "Please select the project ..."
+  echo ${txtyellow}
+  echo "1. hydrazine"
+  echo "2. nitrous"
+  echo "3. nemo"
+  echo "4. opticalshrink"
+  echo "5. atom"
+  echo "6. fluorescence"
+  echo "7. magnumopus"
+  echo ${txtrst}
+while :
+do
+  read INPUT_STRING
+  case $INPUT_STRING in
+	1)
+		echo "Deploying Hydrazine!"
+    export GOPATH=/usr/local/boutiqaat/hydrazine
+    export GOBIN=/usr/local/boutiqaat/hydrazine/bin
+    PROJ_NAME="hydrazine"
+    PROJ_PATH="$GOPATH/src/github.com/BoutiqaatREPO/hydrazine"
+    BUILD_COMMAND="getsetgo deploy"
+
+    break
+		;;
+	2)
+		echo "Deploying Nitrous!"
+    export GOPATH=/usr/local/boutiqaat/nitrous
+    export GOBIN=/usr/local/boutiqaat/nitrous/bin
+    PROJ_NAME="nitrous"
+    PROJ_PATH="$GOPATH/src/github.com/BoutiqaatREPO/nitrous"
+    BUILD_COMMAND="make deploy"
+		break
+		;;
+  3)
+    echo "Deploying Nemo!"
+    export GOPATH=/usr/local/boutiqaat/nemo
+    export GOBIN=/usr/local/boutiqaat/nemo/bin
+    PROJ_NAME="nemo"
+    PROJ_PATH="$GOPATH/src/github.com/BoutiqaatREPO/nemo"
+    BUILD_COMMAND="getsetgo deploy"
+    break
+    ;;
+  4)
+    echo "Deploying OpticalShrink!"
+    export GOPATH=/usr/local/boutiqaat/opticalshrink
+    export GOBIN=/usr/local/boutiqaat/opticalshrink/bin
+    PROJ_NAME="opticalshrink"
+    PROJ_PATH="$GOPATH/src/github.com/BoutiqaatREPO/opticalshrink"
+    BUILD_COMMAND="getsetgo deploy"
+    break
+    ;;    
+  5)
+    echo "Deploying AtOM!"
+    export GOPATH=/usr/local/boutiqaat/atom
+    export GOBIN=/usr/local/boutiqaat/atom/bin
+    PROJ_NAME="atom"
+    PROJ_PATH="$GOPATH/src/github.com/BoutiqaatREPO/atom"
+    BUILD_COMMAND="getsetgo deploy"
+    break
+    ;;
+  6)
+    echo "Deploying Fluorescence!"
+    export GOPATH=/usr/local/boutiqaat/fluorescence
+    export GOBIN=/usr/local/boutiqaat/fluorescence/bin
+    PROJ_NAME="fluorescence"
+    PROJ_PATH="$GOPATH/src/github.com/BoutiqaatREPO/fluorescence"
+    BUILD_COMMAND="getsetgo deploy"
+    break
+    ;;
+  7)
+    echo "Deploying MagnumOpus!"
+    export GOPATH=/usr/local/boutiqaat/magnumopus
+    export GOBIN=/usr/local/boutiqaat/magnumopus/bin
+    PROJ_NAME="magnumopus"
+    PROJ_PATH="$GOPATH/src/github.com/BoutiqaatREPO/magnumopus"
+    BUILD_COMMAND="getsetgo deploy"
+    break
+    ;;                
+	*)
+		echo "Wrong input supplied"
+		;;
+  esac
+done
+}
+
+
+ function fetchTags() {
+  #echo "Fetching RC list from: ";
+  #echo "git fetch --tags git@github.com:BoutiqaatREPO/$PROJ_NAME.git";
+   git fetch --tags git@github.com:BoutiqaatREPO/$PROJ_NAME.git 
+   if [ "$?" != "0" ]; then
+      return 1
+    fi
+    return 0
+ } 
+
+ function takeProjcheckout() {
+    rm -rf $PROJ_PATH/../* 
+    cd "$GOPATH/src/github.com/BoutiqaatREPO"
+    git clone git@github.com:BoutiqaatREPO/$PROJ_NAME.git
+    if [ "$?" != "0" ]; then
+      return 1
+    fi
+    return 0
+ }
+
+
+ function showExistingRc() {
+  echo "fetching RC list"
+  echo "Please wait ...."
+
+  
+  cd "$PROJ_PATH"
+  
+  fetchTags
+  if [ "$?" != "0" ]; then
+      cd ..
+      takeProjcheckout
+      cd "$PROJ_PATH"
+      fetchTags
+      if [ "$?" != "0" ]; then
+       return 1
+      fi
+  fi
+
+  
+  echo "Running git fetch"
+
+  echo ${txtyellow}
+  git tag | sort -V | tail -10
+  echo ${txtrst}
+  return 0
+}
+
+function askForRcName() {
+  read -p "Enter RC Name to be deployed [ $PROJ_NAME ]: "  RC_NAME
+  if [ "$?" != "0" ]; then
+    return 1
+  fi
+  return 0
+}
+
+function deploy() {
+    echo "Checking out $RC_NAME"
+    git checkout $RC_NAME
+    if [ "$?" != "0" ]; then
+      return 1
+    fi
+    #echo "clear off bin directory"
+    
+    rm -rf $GOBIN/*
+    #echo "Build Package"
+    $BUILD_COMMAND
+    if [ "$?" != "0" ]; then
+      return 1
+    fi
+    #echo "deployment success."
+   
+    ANSIBLE_NOCOWS=1 ansible-playbook  /opt/ansible/playbooks/boutiqaat/deploy.yml --extra-vars "binpath=$GOBIN hosts=$HOST_NAME rcname=$RC_NAME ansible_become_pass==
+master projname=$PROJ_NAME"
+    if [ "$?" != "0" ]; then
+      return 1
+    fi
+}
+
+function showsuccess() {
+  /usr/games/cowsay -f moofasa ${txtyellow}It seems you just got it correct.${txtrst}
+}
+
+function main() {
+    selectProject || error_exit "Not a valid project:("
+    selectHost || error_exit "Not a valid host:("
+
+    showExistingRc || error_exit "Could Not Show RC list :("
+    askForRcName || error_exit "Could Not Show RC list :("
+    deploy || error_exit "Deployment failed :("
+    showsuccess
+    
+}
+
+main

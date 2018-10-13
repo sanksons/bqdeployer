@@ -1,8 +1,3 @@
 #!/bin/bash
-mkdir -p /usr/local/boutiqaat/hydrazine/src/github.com/BoutiqaatREPO
-mkdir -p /usr/local/boutiqaat/nitrous/src/github.com/BoutiqaatREPO
-mkdir -p /usr/local/boutiqaat/nemo/src/github.com/BoutiqaatREPO
-mkdir -p /usr/local/boutiqaat/opticalshrink/src/github.com/BoutiqaatREPO
-mkdir -p /usr/local/boutiqaat/atom/src/github.com/BoutiqaatREPO
-mkdir -p /usr/local/boutiqaat/fluorescence/src/github.com/BoutiqaatREPO
-mkdir -p /usr/local/boutiqaat/magnumopus/src/github.com/BoutiqaatREPO
+mkdir -p /workspace
+mkdir -p /images

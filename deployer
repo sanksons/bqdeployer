@@ -20,6 +20,7 @@ PROJ_PATH=''
 
 DEPLOYMENT_FULL_PATH=''
 BUILD_COMMAND=''
+RUN_COMMAND=''
 HOST_NAME=''
 RC_NAME=''
 
@@ -38,24 +39,20 @@ function selectHost() {
   echo "1. Staging"
   echo "2. Testing"
   echo "---------------"
-  echo "3. ALL"
+ # echo "3. ALL"
   echo ${txtrst}
   while :
   do
     read INPUT_STRING
     case $INPUT_STRING in
 	  1)
-      HOST_NAME="staging"
+      HOST_NAME="$STAGING_IP"
       break
 		  ;;
     2)
-      HOST_NAME="testing"
+      HOST_NAME="$TESTING_IP"
       break
 	  	;;
-    3)
-      HOST_NAME="all"
-      break
-	  	;;  
     *)
 		  echo "Wrong input supplied"
 		  ;;
@@ -81,68 +78,10 @@ do
   case $INPUT_STRING in
 	1)
 		echo "Deploying Hydrazine!"
-    export GOPATH=/usr/local/boutiqaat/hydrazine
-    export GOBIN=/usr/local/boutiqaat/hydrazine/bin
     PROJ_NAME="hydrazine"
-    PROJ_PATH="$GOPATH/src/github.com/BoutiqaatREPO/hydrazine"
-    BUILD_COMMAND="getsetgo deploy"
-
+    
     break
-		;;
-	2)
-		echo "Deploying Nitrous!"
-    export GOPATH=/usr/local/boutiqaat/nitrous
-    export GOBIN=/usr/local/boutiqaat/nitrous/bin
-    PROJ_NAME="nitrous"
-    PROJ_PATH="$GOPATH/src/github.com/BoutiqaatREPO/nitrous"
-    BUILD_COMMAND="make deploy"
-		break
-		;;
-  3)
-    echo "Deploying Nemo!"
-    export GOPATH=/usr/local/boutiqaat/nemo
-    export GOBIN=/usr/local/boutiqaat/nemo/bin
-    PROJ_NAME="nemo"
-    PROJ_PATH="$GOPATH/src/github.com/BoutiqaatREPO/nemo"
-    BUILD_COMMAND="getsetgo deploy"
-    break
-    ;;
-  4)
-    echo "Deploying OpticalShrink!"
-    export GOPATH=/usr/local/boutiqaat/opticalshrink
-    export GOBIN=/usr/local/boutiqaat/opticalshrink/bin
-    PROJ_NAME="opticalshrink"
-    PROJ_PATH="$GOPATH/src/github.com/BoutiqaatREPO/opticalshrink"
-    BUILD_COMMAND="getsetgo deploy"
-    break
-    ;;    
-  5)
-    echo "Deploying AtOM!"
-    export GOPATH=/usr/local/boutiqaat/atom
-    export GOBIN=/usr/local/boutiqaat/atom/bin
-    PROJ_NAME="atom"
-    PROJ_PATH="$GOPATH/src/github.com/BoutiqaatREPO/atom"
-    BUILD_COMMAND="getsetgo deploy"
-    break
-    ;;
-  6)
-    echo "Deploying Fluorescence!"
-    export GOPATH=/usr/local/boutiqaat/fluorescence
-    export GOBIN=/usr/local/boutiqaat/fluorescence/bin
-    PROJ_NAME="fluorescence"
-    PROJ_PATH="$GOPATH/src/github.com/BoutiqaatREPO/fluorescence"
-    BUILD_COMMAND="getsetgo deploy"
-    break
-    ;;
-  7)
-    echo "Deploying MagnumOpus!"
-    export GOPATH=/usr/local/boutiqaat/magnumopus
-    export GOBIN=/usr/local/boutiqaat/magnumopus/bin
-    PROJ_NAME="magnumopus"
-    PROJ_PATH="$GOPATH/src/github.com/BoutiqaatREPO/magnumopus"
-    BUILD_COMMAND="getsetgo deploy"
-    break
-    ;;                
+		;;                
 	*)
 		echo "Wrong input supplied"
 		;;
@@ -162,8 +101,8 @@ done
  } 
 
  function takeProjcheckout() {
-    rm -rf $PROJ_PATH/../* 
-    cd "$GOPATH/src/github.com/BoutiqaatREPO"
+    rm -rf "/workspace/$PROJ_NAME"    
+    cd "/workspace"
     git clone git@github.com:BoutiqaatREPO/$PROJ_NAME.git
     if [ "$?" != "0" ]; then
       return 1
@@ -177,13 +116,13 @@ done
   echo "Please wait ...."
 
   
-  cd "$PROJ_PATH"
+  cd "/workspace/$PROJ_NAME"
   
   fetchTags
   if [ "$?" != "0" ]; then
       cd ..
       takeProjcheckout
-      cd "$PROJ_PATH"
+      cd "/workspace/$PROJ_NAME"
       fetchTags
       if [ "$?" != "0" ]; then
        return 1
@@ -213,19 +152,36 @@ function deploy() {
     if [ "$?" != "0" ]; then
       return 1
     fi
-    #echo "clear off bin directory"
-    
-    rm -rf $GOBIN/*
-    #echo "Build Package"
-    $BUILD_COMMAND
+    docker build --tag=boutiqaat/$PROJ_NAME:$RC_NAME .
     if [ "$?" != "0" ]; then
       return 1
     fi
-    #echo "deployment success."
-   
-    ANSIBLE_NOCOWS=1 ansible-playbook  /opt/ansible/playbooks/boutiqaat/deploy.yml --extra-vars "binpath=$GOBIN hosts=$HOST_NAME rcname=$RC_NAME ansible_become_pass==
-master projname=$PROJ_NAME"
+    docker save boutiqaat/$PROJ_NAME:$RC_NAME -o $PROJ_NAME-$RC_NAME.tar
     if [ "$?" != "0" ]; then
+      return 1
+    fi
+    rm -rf /images/$PROJ_NAME
+    mkdir -p /images/$PROJ_NAME
+    mv $PROJ_NAME-$RC_NAME.tar /images/$PROJ_NAME/$PROJ_NAME-$RC_NAME.tar
+   
+    echo "Loading image.."
+    docker -H ${HOST_NAME}:8282 image load -i /images/$PROJ_NAME/$PROJ_NAME-$RC_NAME.tar
+
+    echo "Remove any conflicting containers .."
+    docker -H ${HOST_NAME}:8282 container inspect $PROJ_NAME
+    if [ "$?" == "0" ]; then
+       docker -H ${HOST_NAME}:8282 rm -f $PROJ_NAME
+    fi
+
+    scp ${SSH_USER}@${HOST_NAME}:/etc/boutiqaat/$PROJ_NAME/$PROJ_NAME.env  /tmp/$PROJ_NAME.env
+    docker -H ${HOST_NAME}:8282 \
+       run -d -p 8181:8181 \
+       --name=$PROJ_NAME \
+       --env-file=/tmp/${PROJ_NAME}.env \
+       --user=godocker:gopher \
+       --mount type=bind,source=/var/log/boutiqaat/$PROJ_NAME,target=/var/log/boutiqaat/$PROJ_NAME \
+       boutiqaat/$PROJ_NAME:${RC_NAME}
+     if [ "$?" != "0" ]; then
       return 1
     fi
 }
