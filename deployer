@@ -39,20 +39,24 @@ function selectHost() {
   echo "1. Staging"
   echo "2. Testing"
   echo "---------------"
- # echo "3. ALL"
+  echo "3. ALL"
   echo ${txtrst}
   while :
   do
     read INPUT_STRING
     case $INPUT_STRING in
 	  1)
-      HOST_NAME="$STAGING_IP"
+      HOST_NAME="staging"
       break
 		  ;;
     2)
-      HOST_NAME="$TESTING_IP"
+      HOST_NAME="testing"
       break
 	  	;;
+    3)
+      HOST_NAME="all"
+      break
+	  	;;  
     *)
 		  echo "Wrong input supplied"
 		  ;;
@@ -79,9 +83,33 @@ do
 	1)
 		echo "Deploying Hydrazine!"
     PROJ_NAME="hydrazine"
-    
     break
-		;;                
+		;;
+  3)
+		echo "Deploying Nemo!"
+    PROJ_NAME="nemo"
+    break
+		;;
+  4)
+		echo "Deploying OpticalShrink!"
+    PROJ_NAME="opticalshrink"
+    break
+		;;
+  5)
+		echo "Deploying Atom!"
+    PROJ_NAME="atom"
+    break
+		;;
+  6)
+		echo "Deploying Fluorescence!"
+    PROJ_NAME="fluorescence"
+    break
+		;;
+  7)
+		echo "Deploying MagnumOpus!"
+    PROJ_NAME="magnumopus"
+    break
+		;;                          
 	*)
 		echo "Wrong input supplied"
 		;;
@@ -110,7 +138,6 @@ done
     return 0
  }
 
-
  function showExistingRc() {
   echo "fetching RC list"
   echo "Please wait ...."
@@ -129,7 +156,6 @@ done
       fi
   fi
 
-  
   echo "Running git fetch"
 
   echo ${txtyellow}
@@ -152,7 +178,7 @@ function deploy() {
     if [ "$?" != "0" ]; then
       return 1
     fi
-    docker build --tag=boutiqaat/$PROJ_NAME:$RC_NAME .
+    docker build --tag=boutiqaat/$PROJ_NAME:$RC_NAME . > /dev/null
     if [ "$?" != "0" ]; then
       return 1
     fi
@@ -160,30 +186,23 @@ function deploy() {
     if [ "$?" != "0" ]; then
       return 1
     fi
-    rm -rf /images/$PROJ_NAME
-    mkdir -p /images/$PROJ_NAME
-    mv $PROJ_NAME-$RC_NAME.tar /images/$PROJ_NAME/$PROJ_NAME-$RC_NAME.tar
-   
-    echo "Loading image.."
-    docker -H ${HOST_NAME}:8282 image load -i /images/$PROJ_NAME/$PROJ_NAME-$RC_NAME.tar
-
-    echo "Remove any conflicting containers .."
-    docker -H ${HOST_NAME}:8282 container inspect $PROJ_NAME
-    if [ "$?" == "0" ]; then
-       docker -H ${HOST_NAME}:8282 rm -f $PROJ_NAME
-    fi
-
-    scp ${SSH_USER}@${HOST_NAME}:/etc/boutiqaat/$PROJ_NAME/$PROJ_NAME.env  /tmp/$PROJ_NAME.env
-    docker -H ${HOST_NAME}:8282 \
-       run -d -p 8181:8181 \
-       --name=$PROJ_NAME \
-       --env-file=/tmp/${PROJ_NAME}.env \
-       --user=godocker:gopher \
-       --mount type=bind,source=/var/log/boutiqaat/$PROJ_NAME,target=/var/log/boutiqaat/$PROJ_NAME \
-       boutiqaat/$PROJ_NAME:${RC_NAME}
-     if [ "$?" != "0" ]; then
+    
+    mkdir -p /images/hydrazine/
+    if [ "$?" != "0" ]; then
       return 1
     fi
+    mv /workspace/$PROJ_NAME/$PROJ_NAME-$RC_NAME.tar /images/$PROJ_NAME/$PROJ_NAME-$RC_NAME.tar
+    if [ "$?" != "0" ]; then
+      return 1
+    fi
+
+    ANSIBLE_NOCOWS=1 ansible-playbook  /opt/ansible/playbooks/boutiqaat/deploydocker.yml \
+    --extra-vars "binpath=/images/ hosts=$HOST_NAME \
+    rcname=$RC_NAME ansible_become_pass=master projname=$PROJ_NAME"
+    if [ "$?" != "0" ]; then
+      return 1
+    fi
+
 }
 
 function showsuccess() {
