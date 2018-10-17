@@ -20,6 +20,7 @@ PROJ_PATH=''
 
 DEPLOYMENT_FULL_PATH=''
 BUILD_COMMAND=''
+RUN_COMMAND=''
 HOST_NAME=''
 RC_NAME=''
 
@@ -81,68 +82,34 @@ do
   case $INPUT_STRING in
 	1)
 		echo "Deploying Hydrazine!"
-    export GOPATH=/usr/local/boutiqaat/hydrazine
-    export GOBIN=/usr/local/boutiqaat/hydrazine/bin
     PROJ_NAME="hydrazine"
-    PROJ_PATH="$GOPATH/src/github.com/BoutiqaatREPO/hydrazine"
-    BUILD_COMMAND="getsetgo deploy"
-
     break
-		;;
-	2)
-		echo "Deploying Nitrous!"
-    export GOPATH=/usr/local/boutiqaat/nitrous
-    export GOBIN=/usr/local/boutiqaat/nitrous/bin
-    PROJ_NAME="nitrous"
-    PROJ_PATH="$GOPATH/src/github.com/BoutiqaatREPO/nitrous"
-    BUILD_COMMAND="make deploy"
-		break
 		;;
   3)
-    echo "Deploying Nemo!"
-    export GOPATH=/usr/local/boutiqaat/nemo
-    export GOBIN=/usr/local/boutiqaat/nemo/bin
+		echo "Deploying Nemo!"
     PROJ_NAME="nemo"
-    PROJ_PATH="$GOPATH/src/github.com/BoutiqaatREPO/nemo"
-    BUILD_COMMAND="getsetgo deploy"
     break
-    ;;
+		;;
   4)
-    echo "Deploying OpticalShrink!"
-    export GOPATH=/usr/local/boutiqaat/opticalshrink
-    export GOBIN=/usr/local/boutiqaat/opticalshrink/bin
+		echo "Deploying OpticalShrink!"
     PROJ_NAME="opticalshrink"
-    PROJ_PATH="$GOPATH/src/github.com/BoutiqaatREPO/opticalshrink"
-    BUILD_COMMAND="getsetgo deploy"
     break
-    ;;    
+		;;
   5)
-    echo "Deploying AtOM!"
-    export GOPATH=/usr/local/boutiqaat/atom
-    export GOBIN=/usr/local/boutiqaat/atom/bin
+		echo "Deploying Atom!"
     PROJ_NAME="atom"
-    PROJ_PATH="$GOPATH/src/github.com/BoutiqaatREPO/atom"
-    BUILD_COMMAND="getsetgo deploy"
     break
-    ;;
+		;;
   6)
-    echo "Deploying Fluorescence!"
-    export GOPATH=/usr/local/boutiqaat/fluorescence
-    export GOBIN=/usr/local/boutiqaat/fluorescence/bin
+		echo "Deploying Fluorescence!"
     PROJ_NAME="fluorescence"
-    PROJ_PATH="$GOPATH/src/github.com/BoutiqaatREPO/fluorescence"
-    BUILD_COMMAND="getsetgo deploy"
     break
-    ;;
+		;;
   7)
-    echo "Deploying MagnumOpus!"
-    export GOPATH=/usr/local/boutiqaat/magnumopus
-    export GOBIN=/usr/local/boutiqaat/magnumopus/bin
+		echo "Deploying MagnumOpus!"
     PROJ_NAME="magnumopus"
-    PROJ_PATH="$GOPATH/src/github.com/BoutiqaatREPO/magnumopus"
-    BUILD_COMMAND="getsetgo deploy"
     break
-    ;;                
+		;;                          
 	*)
 		echo "Wrong input supplied"
 		;;
@@ -162,8 +129,8 @@ done
  } 
 
  function takeProjcheckout() {
-    rm -rf $PROJ_PATH/../* 
-    cd "$GOPATH/src/github.com/BoutiqaatREPO"
+    rm -rf "/workspace/$PROJ_NAME"    
+    cd "/workspace"
     git clone git@github.com:BoutiqaatREPO/$PROJ_NAME.git
     if [ "$?" != "0" ]; then
       return 1
@@ -171,26 +138,24 @@ done
     return 0
  }
 
-
  function showExistingRc() {
   echo "fetching RC list"
   echo "Please wait ...."
 
   
-  cd "$PROJ_PATH"
+  cd "/workspace/$PROJ_NAME"
   
   fetchTags
   if [ "$?" != "0" ]; then
       cd ..
       takeProjcheckout
-      cd "$PROJ_PATH"
+      cd "/workspace/$PROJ_NAME"
       fetchTags
       if [ "$?" != "0" ]; then
        return 1
       fi
   fi
 
-  
   echo "Running git fetch"
 
   echo ${txtyellow}
@@ -213,21 +178,31 @@ function deploy() {
     if [ "$?" != "0" ]; then
       return 1
     fi
-    #echo "clear off bin directory"
+    docker build --tag=boutiqaat/$PROJ_NAME:$RC_NAME . > /dev/null
+    if [ "$?" != "0" ]; then
+      return 1
+    fi
+    docker save boutiqaat/$PROJ_NAME:$RC_NAME -o $PROJ_NAME-$RC_NAME.tar
+    if [ "$?" != "0" ]; then
+      return 1
+    fi
     
-    rm -rf $GOBIN/*
-    #echo "Build Package"
-    $BUILD_COMMAND
+    mkdir -p /images/$PROJ_NAME/
     if [ "$?" != "0" ]; then
       return 1
     fi
-    #echo "deployment success."
-   
-    ANSIBLE_NOCOWS=1 ansible-playbook  /opt/ansible/playbooks/boutiqaat/deploy.yml --extra-vars "binpath=$GOBIN hosts=$HOST_NAME rcname=$RC_NAME ansible_become_pass==
-master projname=$PROJ_NAME"
+    mv /workspace/$PROJ_NAME/$PROJ_NAME-$RC_NAME.tar /images/$PROJ_NAME/$PROJ_NAME-$RC_NAME.tar
     if [ "$?" != "0" ]; then
       return 1
     fi
+
+    ANSIBLE_NOCOWS=1 ansible-playbook  /opt/ansible/playbooks/boutiqaat/deploydocker.yml \
+    --extra-vars "binpath=/images/ hosts=$HOST_NAME \
+    rcname=$RC_NAME ansible_become_pass=master projname=$PROJ_NAME"
+    if [ "$?" != "0" ]; then
+      return 1
+    fi
+
 }
 
 function showsuccess() {

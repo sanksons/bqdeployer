@@ -1,4 +1,7 @@
 #!/bin/bash
+mkdir -p /workspace
+mkdir -p /images
+
 mkdir -p /usr/local/boutiqaat/hydrazine/src/github.com/BoutiqaatREPO
 mkdir -p /usr/local/boutiqaat/nitrous/src/github.com/BoutiqaatREPO
 mkdir -p /usr/local/boutiqaat/nemo/src/github.com/BoutiqaatREPO
