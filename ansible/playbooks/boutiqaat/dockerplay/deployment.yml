@@ -23,3 +23,10 @@
    - name: Boot Container.
      command: /etc/boutiqaat/{{projname}}/container.start {{rcname}}
      become: true
+   - name: Restart MagentoQ and stockQ too.
+     command: "{{ item }}"
+     with_items:
+       - /etc/boutiqaat/magentoQ/container.start {{rcname}}
+       - /etc/boutiqaat/stockQ/container.start {{rcname}}
+     become: yes
+     when: projname == "atom"
