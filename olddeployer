@@ -39,6 +39,7 @@ function selectHost() {
   echo "2. Testing"
   echo "---------------"
   echo "3. ALL"
+  echo "4. Dev4"
   echo ${txtrst}
   while :
   do
@@ -55,7 +56,11 @@ function selectHost() {
     3)
       HOST_NAME="all"
       break
-	  	;;  
+	  	;;
+    4)
+      HOST_NAME="dev4"
+      break
+	  	;;    
     *)
 		  echo "Wrong input supplied"
 		  ;;
@@ -74,6 +79,7 @@ function selectProject() {
   echo "5. atom"
   echo "6. fluorescence"
   echo "7. magnumopus"
+  echo "8. sankatmochan"
   echo ${txtrst}
 while :
 do
@@ -142,7 +148,17 @@ do
     PROJ_PATH="$GOPATH/src/github.com/BoutiqaatREPO/magnumopus"
     BUILD_COMMAND="getsetgo deploy"
     break
-    ;;                
+    ;;
+  8)
+    echo "Deploying SankatMochan!"
+    export GOPATH=/usr/local/boutiqaat/sankatmochan
+    export GOBIN=/usr/local/boutiqaat/sankatmochan/bin
+    PROJ_NAME="sankatmochan"
+    PROJ_PATH="$GOPATH/src/github.com/BoutiqaatREPO/sankatmochan"
+    BUILD_COMMAND="getsetgo deploy"
+    break
+    ;;  
+
 	*)
 		echo "Wrong input supplied"
 		;;

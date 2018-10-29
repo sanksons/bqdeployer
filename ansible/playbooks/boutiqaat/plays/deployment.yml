@@ -83,3 +83,9 @@
        - /usr/local/bin/supervisorctl restart magnumopus
      become: yes
      when: projname == "magnumopus"                     
+   - name: sankatmochan specific settings
+     command: "{{ item }}"
+     with_items:
+       - /usr/local/bin/supervisorctl restart sankatmochan
+     become: yes
+     when: projname == "sankatmochan"                        

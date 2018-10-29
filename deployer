@@ -38,8 +38,11 @@ function selectHost() {
   echo "PLease select Host .."
   echo "1. Staging"
   echo "2. Testing"
+  echo "3. Staging [Ireland]"
+  echo "4. Dev4Proxy"
   echo "---------------"
-  echo "3. ALL"
+  echo "99. ALL"
+  
   echo ${txtrst}
   while :
   do
@@ -54,7 +57,15 @@ function selectHost() {
       break
 	  	;;
     3)
-      HOST_NAME="all"
+      HOST_NAME="stagingnew"
+      break
+	  	;;  
+    99)
+      HOST_NAME="applicationstack"
+      break
+	  	;;
+    4)
+      HOST_NAME="dev4proxy"
       break
 	  	;;  
     *)
@@ -75,6 +86,7 @@ function selectProject() {
   echo "5. atom"
   echo "6. fluorescence"
   echo "7. magnumopus"
+  echo "8. sankatmochan"
   echo ${txtrst}
 while :
 do
@@ -109,7 +121,12 @@ do
 		echo "Deploying MagnumOpus!"
     PROJ_NAME="magnumopus"
     break
-		;;                          
+		;;
+  8)
+		echo "Deploying SankatMochan!"
+    PROJ_NAME="sankatmochan"
+    break
+		;;                            
 	*)
 		echo "Wrong input supplied"
 		;;
