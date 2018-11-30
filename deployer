@@ -87,6 +87,7 @@ function selectProject() {
   echo "6. fluorescence"
   echo "7. magnumopus"
   echo "8. sankatmochan"
+  echo "9. discovery"
   echo ${txtrst}
 while :
 do
@@ -126,7 +127,12 @@ do
 		echo "Deploying SankatMochan!"
     PROJ_NAME="sankatmochan"
     break
-		;;                            
+		;;
+  9)
+		echo "Deploying Discovery!"
+    PROJ_NAME="discovery"
+    break
+    ;;      
 	*)
 		echo "Wrong input supplied"
 		;;

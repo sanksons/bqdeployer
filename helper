@@ -10,3 +10,4 @@ mkdir -p /usr/local/boutiqaat/atom/src/github.com/BoutiqaatREPO
 mkdir -p /usr/local/boutiqaat/fluorescence/src/github.com/BoutiqaatREPO
 mkdir -p /usr/local/boutiqaat/magnumopus/src/github.com/BoutiqaatREPO
 mkdir -p /usr/local/boutiqaat/sankatmochan/src/github.com/BoutiqaatREPO
+mkdir -p /usr/local/boutiqaat/discovery/src/github.com/BoutiqaatREPO
