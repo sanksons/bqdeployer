@@ -201,6 +201,10 @@ function deploy() {
     if [ "$?" != "0" ]; then
       return 1
     fi
+    git log -1 > version.txt
+    if [ "$?" != "0" ]; then
+      return 1
+    fi
     docker build --tag=boutiqaat/$PROJ_NAME:$RC_NAME . > /dev/null
     if [ "$?" != "0" ]; then
       return 1
